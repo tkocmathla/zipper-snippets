@@ -1,0 +1,13 @@
+outlook = sunny
+|   temp = hot : no
+|   temp = mild
+|   |   windy = false : no
+|   |   windy = true : yes
+|   temp = cool : yes
+outlook = overcast : yes
+outlook = rainy
+|   temp = hot : no
+|   temp = mild : yes
+|   temp = cool
+|   |   windy = false : yes
+|   |   windy = true : no
