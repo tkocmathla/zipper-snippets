@@ -1,16 +1,24 @@
 (ns zipper-snippets.basics
-  (:require 
+  (:require
     [clojure.pprint :as pp]
+    [clojure.walk :as walk]
     [clojure.zip :as zip]))
 
 ;; concepts
 
 ;; data structure behind a zipper
-;;   a data structure + a cursor
-;;   forward list + backward list (:l and :r)
-;;   l is a vector, r is a seq
-;;     access to last of l is constant (prev)
-;;     access to first of r is constant (next)
+;;   2-element vector (focus + path)
+;;
+;;   :l - backward list
+;;     vector of left siblings
+;;     allows constant-time access to left sibling (prev)
+;;   :r - forward list
+;;     list of right siblings
+;;     allows constant-time access to right sibling (next)
+;;   :pnodes - path nodes
+;;     seq of nodes leading to current loc
+;;   :ppath - parent path
+;;     allows constant-time access to parent (up)
 
 (->> [0 [[1] 2] 3 4 [5]] zip/vector-zip zip/down pp/pprint)
 ;     ^
@@ -18,33 +26,29 @@
 ;       ^
 (->> [0 [[1] 2] 3 4 [5]] zip/vector-zip zip/down zip/right zip/right pp/pprint)
 ;               ^
+(->> [0 [[1] 2] 3 4 [5]] zip/vector-zip zip/down zip/right zip/down pp/pprint)
+;        ^
 
-;; efficient
-;; each op takes constant time and constant allocations
 
-;; contrast with tree-seq and walk
+;; zippers vs tree-seq and walk
+
 ;; tree-seq only allows /visiting/ nodes, and only in a depth-first fashion
+(tree-seq vector? identity [0 [[1] 2] 3 4 [5]])
+
 ;; walk allows pre- and post-order traversal (depth-first) and node modification
+(walk/prewalk (fn [x] (prn x) x) [0 [[1] 2] 3 4 [5]])
+(walk/postwalk (fn [x] (prn x) x) [0 [[1] 2] 3 4 [5]])
 
-;; why useful? 
+(walk/postwalk (fn [x] (cond-> x (number? x) str)) [0 [[1] 2] 3 4 [5]])
+
+
+;; why are zippers useful?
 ;;
-;; pose problem of building a nested data structure like rf trees or hickory
-;; solve in a later ns
-;; outlook = sunny
-;; |   temp = hot : no
-;; |   temp = mild
-;; |   |   windy = false : no
-;; |   |   windy = true : yes
-;; |   temp = cool : yes
-;; outlook = overcast : yes
-;; outlook = rainy
-;; |   temp = hot : no
-;; |   temp = mild : yes
-;; |   temp = cool
-;; |   |   windy = false : yes
-;; |   |   windy = true : no
-
-
-;; good primer 
-;; https://pavpanchekha.com/blog/zippers/huet.html
-
+;; - allow movement in any direction (up, down, left, right)
+;;
+;; - intuitive graph/tree traversal
+;;
+;; - avoid recursion!
+;;
+;; - parse an arbitrary graph description where the shape isn't known until the
+;;   entire graph is parsed

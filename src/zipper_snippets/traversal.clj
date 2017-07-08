@@ -1,5 +1,11 @@
 (ns zipper-snippets.traversal
-  (:require [clojure.zip :as z]))
+  (:require
+    [clojure.pprint :as pp]
+    [clojure.string :as string]
+    [hickory.core :as hick]
+    [hickory.zip :as hzip]
+    [medley.core :refer [queue]]
+    [clojure.zip :as z]))
 
 ;; basic movement --------------------------------------------------------------
 
@@ -28,17 +34,19 @@
        (take (inc n))
        last))
 
-;; next-nth, down-nth, left-nth, right-nth, etc...
+;; up-nth, down-nth, left-nth, right-nth, etc...
 
-;; more generic -- any movement
+;; more generic -- any movement given by move-fn
 
 (defn move-nth
-  [loc move-fn n]
-  (->> loc
-       (iterate move-fn)
-       (take (inc n))
-       last))
+  [move-fn loc n]
+  (some->> loc
+           (iterate move-fn)
+           (take (inc n))
+           last))
 
+;; for example:
+;;
 ;;     *
 ;;   /   \
 ;; :a     *
@@ -49,48 +57,37 @@
 ;;           |
 ;;          :e
 
-(z/node
-  (move-nth 
-    (-> (z/vector-zip [:a [:b :c [[:e] :d]]]) z/down z/right z/down z/right z/right z/down)
-    (comp z/left z/up)
-    1))
+(def up-left-nth (partial move-nth (comp z/left z/up)))
+
+(up-left-nth
+  (-> (z/vector-zip [:a [:b :c [[:e] :d]]]) z/down z/right z/down z/right z/right z/down)
+  1)
+
 
 ;; advanced movement -----------------------------------------------------------
 
 ;; breadth-first traversal
 
-(def leaf? (every-pred (complement nil?) (complement z/branch?)))
+(defn visit [loc visit-fn visited]
+  (let [data (visit-fn (z/node loc))]
+    (cond-> visited data (conj data))))
 
-(defn descend [loc]
-  (some->> (z/leftmost loc)
+(defn children [loc]
+  (some->> loc
+           z/down
            (iterate z/right)
-           (drop-while leaf?)
-           first
-           z/down))
-
-(defn visit [loc visited]
-  (cond-> visited (leaf? loc) (conj! (z/node loc))))
+           (take-while identity)))
 
 (defn bf-zip
-  ([loc] 
-   (bf-zip loc (transient [])))
-  ([loc visited] 
-   (cond
-     (nil? loc) (persistent! visited)  
-     (seq (z/rights loc)) (recur (z/right loc) (visit loc visited))
-     :else (recur (descend loc) (visit loc visited)))))
+  ([loc]
+   (bf-zip identity (queue [loc]) []))
+  ([loc visit-fn]
+   (bf-zip visit-fn (queue [loc]) []))
+  ([visit-fn q visited]
+   (if-let [head (peek q)]
+     (recur visit-fn (into (pop q) (children head)) (visit head visit-fn visited))
+     visited)))
 
-;;     *
-;;   /   \
-;; :a     *
-;;      / | \
-;;    :b :c  *
-;;           | \
-;;           *  :d
-;;           |
-;;          :e
-;;
-(bf-zip (z/vector-zip [:a [:b :c [[:e] :d]]]))
 
 ;;     *
 ;;   /   \
@@ -102,4 +99,46 @@
 ;;           |
 ;;           5
 ;;
-(bf-zip (z/seq-zip '(1 (2 (3 (5) 4)))))
+(bf-zip (z/seq-zip '(1 (2 (3 (5) 4))))
+        #(when (number? %) %))
+
+
+;;    _ * _
+;;   /  |  \
+;; :a   *   *_
+;;    / | \   \
+;;  :b :c  *   :z
+;;         | \
+;;         *  :d
+;;         |
+;;        :e
+;;
+(bf-zip (z/vector-zip [:a [:b :c [[:e] :d]] [:z]])
+        #(when (keyword? %) %))
+
+
+(def html
+  "<table>
+    <tr>
+     <th>Name</th>
+     <th>Age</th>
+     <th>Favorite Food</th>
+    </tr>
+    <tr>
+     <td>Mark</td>
+     <td>NaN</td>
+     <td>Tacos</td>
+    </tr>
+    <tr>
+     <td>Thomas</td>
+     <td>Youthful</td>
+     <td>Peanut butter</td>
+    </tr>
+   </table>")
+
+(-> (hzip/hickory-zip (hick/as-hickory (hick/parse html)))
+    (bf-zip (fn [x]
+              (cond
+                (map? x) (:tag x)
+                (string? x) (-> x string/trim not-empty))))
+    pp/pprint)

@@ -1,7 +1,11 @@
 (ns zipper-snippets.constructors
-  (:require
-    [clojure.xml :as xml]
-    [clojure.zip :as zip]))
+  (:require [clojure.zip :as zip]))
+
+;; zipper
+;; creates arbitrary zipper given fns to determine leaf/branch and generate nodes and children
+;;
+;; fns stored as meta on zipper object
+
 
 ;; seq-zip
 ;; node has children if (seq node)
@@ -20,7 +24,7 @@
      zip/seq-zip ; (1 (2 (3 (5) 4)))
                  ; ^
      zip/down    ; (1 (2 (3 (5) 4)))
-                 ;  ^ 
+                 ;  ^
      zip/right   ; (1 (2 (3 (5) 4)))
                  ;    ^
      zip/down    ; (1 (2 (3 (5) 4)))

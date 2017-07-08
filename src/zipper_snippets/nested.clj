@@ -22,7 +22,7 @@
 
 ;; -----------------------------------------------------------------------------
 
-(defn up-nth [loc n] #(move-nth loc zip/up n))
+(def up-nth (partial move-nth zip/up))
 
 (def xform-tree
   (comp (take-while seq)
@@ -46,9 +46,9 @@
 (defn lines-to-graph
   [lines]
   (loop [lines lines, last-depth -1, ztree (zip/xml-zip {})]
-    (if-let [[depth node] (first lines)] 
-      (recur (rest lines) 
-             depth 
+    (if-let [[depth node] (first lines)]
+      (recur (rest lines)
+             depth
              (cond-> ztree
                ;; sibling
                (= depth last-depth) (-> (zip/insert-right node) zip/right)
