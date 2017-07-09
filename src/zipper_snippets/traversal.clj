@@ -12,17 +12,11 @@
 ;; next, prev
 ;; move to next or previous node in depth-first traversal
 
-
-
 ;; up, down
 ;; move to parent or leftmost child node
 
-
-
 ;; right, left
 ;; move to right or left sibling node
-
-
 
 
 ;; batched movement ------------------------------------------------------------
@@ -59,9 +53,10 @@
 
 (def up-left-nth (partial move-nth (comp z/left z/up)))
 
-(up-left-nth
-  (-> (z/vector-zip [:a [:b :c [[:e] :d]]]) z/down z/right z/down z/right z/right z/down)
-  1)
+(z/node
+  (up-left-nth
+    (-> (z/vector-zip [:a [:b :c [[:e] :d]]]) z/down z/right z/down z/right z/right z/down)
+    2))
 
 
 ;; advanced movement -----------------------------------------------------------
@@ -80,12 +75,12 @@
 
 (defn bf-zip
   ([loc]
-   (bf-zip identity (queue [loc]) []))
+   (bf-zip (queue [loc]) identity []))
   ([loc visit-fn]
-   (bf-zip visit-fn (queue [loc]) []))
-  ([visit-fn q visited]
-   (if-let [head (peek q)]
-     (recur visit-fn (into (pop q) (children head)) (visit head visit-fn visited))
+   (bf-zip (queue [loc]) visit-fn []))
+  ([locs visit-fn visited]
+   (if-let [loc (peek locs)]
+     (recur (into (pop locs) (children loc)) visit-fn (visit loc visit-fn visited))
      visited)))
 
 
@@ -117,23 +112,31 @@
         #(when (keyword? %) %))
 
 
+;; +--------+----------+---------------+
+;; | Name   | Age      | Favorite Food |
+;; +--------+----------+---------------+
+;; | Mark   | NaN      | Tacos         |
+;; +--------+----------+---------------+
+;; | Thomas | Youthful | Peanut butter |
+;; +--------+----------+---------------+
+;;
 (def html
   "<table>
-    <tr>
-     <th>Name</th>
-     <th>Age</th>
-     <th>Favorite Food</th>
-    </tr>
-    <tr>
-     <td>Mark</td>
-     <td>NaN</td>
-     <td>Tacos</td>
-    </tr>
-    <tr>
-     <td>Thomas</td>
-     <td>Youthful</td>
-     <td>Peanut butter</td>
-    </tr>
+     <tr>
+       <th>Name</th>
+       <th>Age</th>
+       <th>Favorite Food</th>
+     </tr>
+     <tr>
+       <td>Mark</td>
+       <td>NaN</td>
+       <td>Tacos</td>
+     </tr>
+     <tr>
+       <td>Thomas</td>
+       <td>Youthful</td>
+       <td>Peanut butter</td>
+     </tr>
    </table>")
 
 (-> (hzip/hickory-zip (hick/as-hickory (hick/parse html)))

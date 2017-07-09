@@ -20,6 +20,19 @@
 ;;   :ppath - parent path
 ;;     allows constant-time access to parent (up)
 
+;; example
+;;
+;; [0 [[1] 2] 3 4 [5]]
+;; hint: think of left-open-brackets as branches, and numbers as leaves
+;;
+;;       ___ __ [ __ ___
+;;      /   /   |   \   \
+;;     0   [    3   4    [
+;;        / \            |
+;;       [   2]          5]]
+;;       |
+;;       1]
+
 (->> [0 [[1] 2] 3 4 [5]] zip/vector-zip zip/down pp/pprint)
 ;     ^
 (->> [0 [[1] 2] 3 4 [5]] zip/vector-zip zip/down zip/right pp/pprint)
@@ -32,12 +45,12 @@
 
 ;; zippers vs tree-seq and walk
 
-;; tree-seq only allows /visiting/ nodes, and only in a depth-first fashion
+;; tree-seq only allows /visiting/ nodes, and only in a pre-order depth-first fashion
 (tree-seq vector? identity [0 [[1] 2] 3 4 [5]])
 
 ;; walk allows pre- and post-order traversal (depth-first) and node modification
-(walk/prewalk (fn [x] (prn x) x) [0 [[1] 2] 3 4 [5]])
-(walk/postwalk (fn [x] (prn x) x) [0 [[1] 2] 3 4 [5]])
+(walk/prewalk (fn [x] (prn x) x) [0 [[1] 2] 3 4 [5]])  ;; visits root first
+(walk/postwalk (fn [x] (prn x) x) [0 [[1] 2] 3 4 [5]]) ;; visits leaves first
 
 (walk/postwalk (fn [x] (cond-> x (number? x) str)) [0 [[1] 2] 3 4 [5]])
 
@@ -50,5 +63,5 @@
 ;;
 ;; - avoid recursion!
 ;;
-;; - parse an arbitrary graph description where the shape isn't known until the
-;;   entire graph is parsed
+;; - use case: parse an arbitrary graph description in a single pass where the
+;;   shape isn't known until the entire graph is parsed
