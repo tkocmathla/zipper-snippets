@@ -45,10 +45,10 @@
 
 ;; zippers vs tree-seq and walk
 
-;; tree-seq only allows /visiting/ nodes, and only in a pre-order depth-first fashion
+;; tree-seq only allows /visiting/ nodes, and only in a recursive pre-order depth-first fashion
 (tree-seq vector? identity [0 [[1] 2] 3 4 [5]])
 
-;; walk allows pre- and post-order traversal (depth-first) and node modification
+;; walk allows recursive pre- and post-order traversal (depth-first) and node modification
 (walk/prewalk (fn [x] (prn x) x) [0 [[1] 2] 3 4 [5]])  ;; visits root first
 (walk/postwalk (fn [x] (prn x) x) [0 [[1] 2] 3 4 [5]]) ;; visits leaves first
 
@@ -57,7 +57,7 @@
 
 ;; why are zippers useful?
 ;;
-;; - allow movement in any direction (up, down, left, right)
+;; - allow arbitrary movement in any direction (up, down, left, right)
 ;;
 ;; - intuitive graph/tree traversal
 ;;
