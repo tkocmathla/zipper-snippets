@@ -7,4 +7,5 @@
                  [org.clojure/data.xml "0.0.8"]
                  [org.clojure/data.zip "0.1.2"]
                  [hickory "0.7.1"]
-                 [medley "1.0.0"]])
+                 [medley "1.0.0"]
+                 [cc.artifice/vijual "0.2.5"]])

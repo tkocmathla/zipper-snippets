@@ -1,5 +1,7 @@
 (ns zipper-snippets.constructors
-  (:require [clojure.zip :as zip]))
+  (:require 
+    [clojure.zip :as zip]
+    [zipper-snippets.draw :refer :all]))
 
 ;; zipper
 ;; creates arbitrary zipper given fns to determine leaf/branch and generate nodes and children
@@ -8,7 +10,7 @@
 
 
 ;; seq-zip
-;; node has children if (seq? node)
+;; node is a branch if (seq? node)
 ;;
 ;;     *
 ;;   /   \
@@ -37,35 +39,35 @@
 
 
 ;; vec-zip
-;; node has children if (vec? node)
+;; node is a branch if (vec? node)
 ;;
-;;     *
-;;   /   \
-;; :a     *
-;;      / | \
-;;    :b :c  *
-;;           | \
-;;           *  :e
-;;           |
-;;          :d
+;;      *
+;;    /   \
+;; '(:a)   *
+;;       / | \
+;;     :b :c  *
+;;            | \
+;;            *  :e
+;;            |
+;;           :d
 ;;
-(->> [:a [:b :c [[:d] :e]]]
-     zip/vector-zip ; [:a [:b :c [[:d] :e]]]
+(->> ['(:a) [:b :c [[:d] :e]]]
+     zip/vector-zip ; ['(:a) [:b :c [[:d] :e]]]
                     ; ^
-     zip/down       ; [:a [:b :c [[:d] :e]]]
+     zip/down       ; ['(:a) [:b :c [[:d] :e]]]
                     ;  ^
-     zip/right      ; [:a [:b :c [[:d] :e]]]
-                    ;     ^
-     zip/down       ; [:a [:b :c [[:d] :e]]]
-                    ;      ^
-     zip/right      ; [:a [:b :c [[:d] :e]]]
+     zip/right      ; ['(:a) [:b :c [[:d] :e]]]
+                    ;        ^
+     zip/down       ; ['(:a) [:b :c [[:d] :e]]]
                     ;         ^
+     zip/right      ; ['(:a) [:b :c [[:d] :e]]]
+                    ;            ^
      zip/node)      ; :c
 
 
 ;; xml-zip
 ;;
-;; node has children if ((complement string?) node)
+;; node is a branch if ((complement string?) node)
 ;; children are in :content
 ;;
 ;; <p><b>foo</b>bar</p>

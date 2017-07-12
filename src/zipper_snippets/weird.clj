@@ -1,19 +1,21 @@
 (ns zipper-snippets.weird
   (:require
+    [clojure.walk :as walk]
     [clojure.zip :as z]
+    [zipper-snippets.draw :refer :all]
     [zipper-snippets.traversal :refer [move-nth]]))
 
 ;; copy ------------------------------------------------------------------------
 
-;;     *
-;;   /   \
-;; :a     *  <- copy node to here
-;;      / | \
-;;    :b :c  *
-;;           | \
-;;           *  :d  <- start
-;;           |
-;;          :e
+;;          *
+;;        /   \
+;;      :a     *
+;; copy -^   / | \
+;; here    :b :c  *
+;;                | \
+;;                *  :d  <- start here
+;;                |
+;;               :e
 
 (defn copy-zip
   [loc move-fn & {:keys [replace?]}]
@@ -25,9 +27,9 @@
 (let [next-nth (partial move-nth z/next)]
   (-> (z/vector-zip [:a [:b :c [[:e] :d]]])
       (next-nth 8)
-      (copy-zip (comp z/up z/up))
-      z/root))
-
+      (copy-zip (comp z/left z/up z/up) :replace? true)
+      z/root
+      draw-vec))
 
 ;; cut -------------------------------------------------------------------------
 
@@ -35,9 +37,9 @@
 ;;      /   \
 ;;    :a     *
 ;;         / | \
-;;       :b :c  *  <- start
+;;       :b :c  *  <- start here
 ;;  cut --^ -^  | \
-;;              *  :d
+;; these        *  :d
 ;;              |
 ;;             :e
 
@@ -59,4 +61,5 @@
   (-> (z/vector-zip [:a [:b :c [[:e] :d]]])
       (next-nth 5)
       (cut-zip [z/left z/left])
-      z/root))
+      z/root
+      draw-vec))
