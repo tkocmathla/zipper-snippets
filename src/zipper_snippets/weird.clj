@@ -7,8 +7,12 @@
 
 (defn string-zip [root]
   (z/zipper
-    string?
-    (fn [[f & r]] (if r [f (apply str r)] [f]))
+    (every-pred string? #(> (count %) 1))
+    (fn [s]
+      (let [len (count s)]
+        (if (> len 1)
+          (map (partial apply str) (split-at (/ len 2) s))
+          s)))
     identity
     root))
 
