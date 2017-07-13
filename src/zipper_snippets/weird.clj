@@ -12,7 +12,7 @@
     identity
     root))
 
-(->> "bar" string-zip bf-zip)
+(->> "bamboozle" string-zip bf-zip)
 
 
 (defn prime-fact-zip [root]
@@ -23,9 +23,12 @@
         (loop [d 2]
           (if (divisible? n d) 
             (when (not= n d)
-              [(/ n d) d])
+              [d (/ n d)])
             (recur (inc d)))))
       identity
       root)))
 
-(-> 102 prime-fact-zip bf-zip)
+(->> 720720
+     prime-fact-zip
+     bf-zip
+     ((fn [[_ & r]] (conj (vec (take-nth 2 r)) (last r)))))
