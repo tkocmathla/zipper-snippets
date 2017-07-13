@@ -16,15 +16,16 @@
 
 
 (defn prime-fact-zip [root]
-  (z/zipper
-    #(> % 1)
-    (fn [n] 
-      (loop [d 2]
-        (if (zero? (mod n d)) 
-          (when (not= n d)
-            [(/ n d) d])
-          (recur (inc d)))))
-    identity
-    root))
+  (let [divisible? (fn [n d] (zero? (mod n d)))] 
+    (z/zipper
+      #(> % 1)
+      (fn [n] 
+        (loop [d 2]
+          (if (divisible? n d) 
+            (when (not= n d)
+              [(/ n d) d])
+            (recur (inc d)))))
+      identity
+      root)))
 
 (-> 102 prime-fact-zip bf-zip)
