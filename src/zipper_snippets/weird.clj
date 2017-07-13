@@ -8,7 +8,7 @@
 (defn string-zip [root]
   (z/zipper
     string?
-    (fn [s] (let [[f & r] s] (if r [f (apply str r)] [f])))
+    (fn [[f & r]] (if r [f (apply str r)] [f]))
     identity
     root))
 
