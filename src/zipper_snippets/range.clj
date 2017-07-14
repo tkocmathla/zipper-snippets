@@ -2,7 +2,7 @@
   (:require 
     [clojure.zip :as z]
     [zipper-snippets.draw :refer :all]
-    [zipper-snippets.traversal :refer [move-nth]]))
+    [zipper-snippets.traversal :refer [next-nth]]))
 
 ;; copy ------------------------------------------------------------------------
 
@@ -23,12 +23,11 @@
       (-> loc move-fn (z/replace node))
       (-> loc move-fn z/up (z/append-child node)))))
 
-(let [next-nth (partial move-nth z/next)]
-  (-> (z/vector-zip [:a [:b :c [[:e] :d]]])
-      (next-nth 8)
-      (copy-zip (comp z/left z/up z/up) :replace? true)
-      z/root
-      draw-vec))
+(-> (z/vector-zip [:a [:b :c [[:e] :d]]])
+    (next-nth 8)
+    (copy-zip (comp z/left z/up z/up) :replace? true)
+    z/root
+    draw-vec)
 
 ;; cut -------------------------------------------------------------------------
 
@@ -42,10 +41,12 @@
 ;;              |
 ;;             :e
 
+(def top? (comp nil? second)) ; true when path of zipper is nil
+
 (defn root-loc [loc]
   (->> loc
        (iterate z/up)
-       (take-while identity)
+       (take-while (complement top?))
        last))
 
 (defn cut-zip
@@ -56,9 +57,9 @@
        (take-while (complement z/end?))
        last))
 
-(let [next-nth (partial move-nth z/next)]
-  (-> (z/vector-zip [:a [:b :c [[:e] :d]]])
-      (next-nth 5)
-      (cut-zip [z/left z/left])
-      z/root
-      draw-vec))
+(-> (z/vector-zip [:a [:b :c [[:e] :d]]])
+    (next-nth 5)
+    (cut-zip [z/left z/left])
+    ;(cut-zip [identity (comp z/left z/left)])
+    z/root
+    draw-vec)

@@ -21,12 +21,12 @@
 
 ;; batched movement ------------------------------------------------------------
 
-(defn next-nth
-  [loc n]
-  (->> loc
-       (iterate z/next)
-       (take (inc n))
-       last))
+(->> [1 2 3 4 5]
+     z/vector-zip
+     (iterate z/next)
+     (take 3)
+     last
+     z/node)
 
 ;; up-nth, down-nth, left-nth, right-nth, etc...
 
@@ -38,6 +38,10 @@
            (iterate move-fn)
            (take (inc n))
            last))
+
+(def next-nth (partial move-nth z/next))
+(def up-nth (partial move-nth z/up))
+(def up-left-nth (partial move-nth (comp z/left z/up)))
 
 ;; for example:
 ;;
@@ -51,12 +55,27 @@
 ;;           |
 ;;          :e
 
-(def up-left-nth (partial move-nth (comp z/left z/up)))
+(-> [:a [:b :c [[:e] :d]]]
+    z/vector-zip
+    (next-nth 6)
+    (up-left-nth 2)
+    z/node)
 
-(z/node
-  (up-left-nth
-    (-> (z/vector-zip [:a [:b :c [[:e] :d]]]) z/down z/right z/down z/right z/right z/down)
-    2))
+
+;; movement with editing -------------------------------------------------------
+
+(defn zmap [f loc]
+  (if (z/end? loc)
+    (z/root loc)
+    (recur f (z/next (z/edit loc f)))))
+
+(->> [-1 [8 0 [2] 4] 9]
+     z/vector-zip
+     (zmap #(cond-> % (number? %) inc)))
+
+(->> {:tag :p :content [{:tag :b :content ["foo"]} "bar"]}
+     z/xml-zip
+     (zmap #(cond-> % (map? %) (assoc :SEEN 1))))
 
 
 ;; advanced movement -----------------------------------------------------------
@@ -112,6 +131,29 @@
         #(when (keyword? %) %))
 
 
+(def html
+  "<table>
+     <thead>
+       <tr>
+         <th>Name</th>
+         <th>Age</th>
+         <th>Favorite Food</th>
+       </tr>
+     </thead>
+     <tbody>
+       <tr>
+         <td>Mark</td>
+         <td>NaN</td>
+         <td>Tacos</td>
+       </tr>
+       <tr>
+         <td>Thomas</td>
+         <td>Youthful</td>
+         <td>Peanut butter</td>
+       </tr>
+     </tbody>
+   </table>")
+
 ;; +--------+----------+---------------+
 ;; | Name   | Age      | Favorite Food |
 ;; +--------+----------+---------------+
@@ -119,27 +161,8 @@
 ;; +--------+----------+---------------+
 ;; | Thomas | Youthful | Peanut butter |
 ;; +--------+----------+---------------+
-;;
-(def html
-  "<table>
-     <tr>
-       <th>Name</th>
-       <th>Age</th>
-       <th>Favorite Food</th>
-     </tr>
-     <tr>
-       <td>Mark</td>
-       <td>NaN</td>
-       <td>Tacos</td>
-     </tr>
-     <tr>
-       <td>Thomas</td>
-       <td>Youthful</td>
-       <td>Peanut butter</td>
-     </tr>
-   </table>")
 
-(-> (hzip/hickory-zip (hick/as-hickory (hick/parse html)))
+(-> (hzip/hickory-zip (hick/as-hickory (first (hick/parse-fragment html))))
     (bf-zip (fn [x]
               (cond
                 (map? x) (:tag x)

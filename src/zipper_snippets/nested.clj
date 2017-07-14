@@ -3,8 +3,8 @@
     [clojure.java.io :as io]
     [clojure.pprint :as pp]
     [clojure.string :as string]
-    [clojure.zip :as zip]
-    [zipper-snippets.traversal :refer [move-nth]]))
+    [clojure.zip :as z]
+    [zipper-snippets.traversal :refer [up-nth]]))
 
 ;; outlook = sunny
 ;; |   temp = hot : no
@@ -21,8 +21,6 @@
 ;; |   |   windy = true : no
 
 ;; -----------------------------------------------------------------------------
-
-(def up-nth (partial move-nth zip/up))
 
 (def xform-tree
   (comp (take-while seq)
@@ -44,24 +42,24 @@
 ;; -----------------------------------------------------------------------------
 
 (defn lines-to-graph
-  [lines]
-  (loop [lines lines, last-depth -1, ztree (zip/xml-zip {})]
-    (if-let [[depth node] (first lines)]
-      (recur (rest lines)
-             depth
-             (cond-> ztree
-               ;; sibling
-               (= depth last-depth) (-> (zip/insert-right node) zip/right)
-               ;; parent
-               (< depth last-depth) (-> (up-nth (- last-depth depth)) (zip/insert-right node) zip/right)
-               ;; child
-               (> depth last-depth) (-> (zip/append-child node) zip/down)))
-      ztree)))
+  ([lines]
+   (lines-to-graph lines -1 (z/xml-zip {})))
+  ([[[depth node] & lines] last-depth ztree]
+   (if node
+     (recur lines depth 
+            (cond-> ztree
+              ;; sibling of last node
+              (= depth last-depth) (-> (z/insert-right node) z/right)
+              ;; sibling of ancestor
+              (< depth last-depth) (-> (up-nth (- last-depth depth)) (z/insert-right node) z/right)
+              ;; child of last node
+              (> depth last-depth) (-> (z/append-child node) z/down)))
+     ztree)))
 
 (->> "tree.txt"
      io/resource
      slurp
      parse-tree-str
      lines-to-graph
-     zip/root
+     z/root
      pp/pprint)
